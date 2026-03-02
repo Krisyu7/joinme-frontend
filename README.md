@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JoinMe - Frontend 🏃
+
+The frontend of JoinMe, a social platform for organizing and joining local sports drop-in games.
+
+Built with Next.js 16 + TypeScript + Tailwind CSS.
+
+## Tech Stack
+
+- **Next.js 16** - React framework with App Router
+- **TypeScript** - Type-safe JavaScript
+- **Tailwind CSS** - Utility-first CSS framework
+- **Axios** - HTTP client
+- **STOMP.js + SockJS** - WebSocket real-time chat
+
+## Pages
+
+| Page | Path | Description |
+|------|------|-------------|
+| Home | `/` | Browse and filter local events |
+| Login | `/login` | User authentication |
+| Register | `/register` | Create account |
+| Event Detail | `/events/:id` | View event, join/leave |
+| Create Event | `/events/create` | Create a new game |
+| Chat | `/events/:id/chat` | Real-time group chat |
+| Notifications | `/notifications` | In-app notifications |
+| Profile | `/profile` | User profile and stats |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- JoinMe Backend running on `http://localhost:8080`
 
+### Installation
 ```bash
+git clone https://github.com/Krisyu7/joinme-frontend.git
+cd joinme-frontend
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Backend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The backend repository can be found here:
+[JoinMe Backend](https://github.com/Krisyu7/joinme-backend)
 
-## Learn More
+## Author
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Minghao Yu — [GitHub](https://github.com/Krisyu7)
