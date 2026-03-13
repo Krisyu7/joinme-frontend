@@ -32,7 +32,7 @@ export default function ChatPage() {
 
     const connectWebSocket = () => {
         const client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+            webSocketFactory: () => new SockJS(`${process.env.NEXT_PUBLIC_API_URL}/ws`),
             connectHeaders: {
                 Authorization: `Bearer ${token}`,
             },
