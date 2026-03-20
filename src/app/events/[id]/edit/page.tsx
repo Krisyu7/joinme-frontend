@@ -184,7 +184,7 @@ export default function EditEventPage() {
                         <label className="text-sm text-gray-400 mb-1.5 block">Date & Time</label>
                         <DatePicker
                             selected={form.startTime}
-                            onChange={(date) => setForm({ ...form, startTime: date })}
+                            onChange={(date: Date | null) => setForm({ ...form, startTime: date })}
                             showTimeSelect
                             timeFormat="HH:mm"
                             timeIntervals={15}
