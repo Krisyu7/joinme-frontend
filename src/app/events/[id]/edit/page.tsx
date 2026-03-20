@@ -9,6 +9,10 @@ import Navbar from '@/components/Navbar'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 
+const pad = (n: number) => String(n).padStart(2, '0')
+const toLocalISO = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`
+
 const SPORTS = ['FOOTBALL', 'BADMINTON', 'BASKETBALL', 'TENNIS', 'VOLLEYBALL', 'OTHER']
 const SPORT_ICONS: Record<string, string> = {
     FOOTBALL: '⚽',
@@ -89,7 +93,7 @@ export default function EditEventPage() {
         try {
             await api.put(`/api/events/${id}`, {
                 ...form,
-                startTime: form.startTime!.toISOString().slice(0, 19),
+                startTime: toLocalISO(form.startTime!),
                 reservedSpots: reservedNames.length,
                 reservedNames,
             })
