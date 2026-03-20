@@ -63,7 +63,7 @@ export default function EventCard({ event }: { event: Event }) {
                         </div>
                         <div className="text-xs text-gray-500">spots left</div>
                         <div className="text-xs text-gray-600 mt-1">
-                            {event.currentParticipants}/{event.maxSpots - event.reservedSpots}
+                            {event.currentParticipants + event.reservedSpots}/{event.maxSpots}
                         </div>
                     </div>
                 </div>

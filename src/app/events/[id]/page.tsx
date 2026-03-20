@@ -39,6 +39,18 @@ export default function EventDetailPage() {
     const [loading, setLoading] = useState(true)
     const [actionLoading, setActionLoading] = useState(false)
     const [message, setMessage] = useState('')
+    const [copied, setCopied] = useState(false)
+
+    const handleShare = async () => {
+        const url = window.location.href
+        if (navigator.share) {
+            await navigator.share({ title: event?.title, url })
+        } else {
+            await navigator.clipboard.writeText(url)
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+        }
+    }
 
     useEffect(() => {
         fetchEvent()
@@ -61,11 +73,8 @@ export default function EventDetailPage() {
 
     const fetchParticipants = async () => {
         try {
-            // 组织者获取全部名单
-            if (user?.userId === event?.organizerId) {
-                const res = await api.get<ApiResponse<Participation[]>>(`/api/events/${id}/participants`)
-                setParticipants(res.data.data)
-            }
+            const res = await api.get<ApiResponse<Participation[]>>(`/api/events/${id}/participants`)
+            setParticipants(res.data.data)
             // 所有登录用户获取自己的状态
             const statusRes = await api.get<ApiResponse<Participation>>(`/api/events/${id}/my-status`)
             setMyParticipation(statusRes.data.data)
@@ -162,12 +171,38 @@ export default function EventDetailPage() {
                             </div>
                             <p className="text-gray-400 text-sm">by {event.organizerName}</p>
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            event.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
-                                event.status === 'COMPLETED' ? 'bg-blue-500/20 text-blue-400' :
-                                    'bg-gray-500/20 text-gray-400'
-                        }`}>
-                            {event.status}
+                        <div className="flex items-center gap-2">
+                            <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                event.status === 'ACTIVE' ? 'bg-green-500/20 text-green-400' :
+                                    event.status === 'COMPLETED' ? 'bg-blue-500/20 text-blue-400' :
+                                        'bg-gray-500/20 text-gray-400'
+                            }`}>
+                                {event.status}
+                            </div>
+                            <button
+                                onClick={handleShare}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                            >
+                                {copied ? (
+                                    <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                        Copied!
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="18" cy="5" r="3" />
+                                            <circle cx="6" cy="12" r="3" />
+                                            <circle cx="18" cy="19" r="3" />
+                                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                                        </svg>
+                                        Share Event
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
 
@@ -179,7 +214,7 @@ export default function EventDetailPage() {
                             <span>🕐</span> {formatDate(event.startTime)}
                         </div>
                         <div className="flex items-center gap-2 text-gray-300">
-                            <span>👥</span> {event.currentParticipants} joined · {event.availableSpots} spots left
+                            <span>👥</span> {event.currentParticipants + event.reservedSpots} joined · {event.availableSpots} spots left
                         </div>
                         {event.feeDescription && (
                             <div className="flex items-center gap-2 text-gray-300">
@@ -217,6 +252,13 @@ export default function EventDetailPage() {
                     <div className="mb-4">
                         {isOrganizer ? (
                             <div className="flex gap-3">
+                                <Link href={`/events/${id}/edit`} className="flex-1">
+                                    <button
+                                        className="w-full border border-gray-700 text-gray-300 hover:border-green-400/50 hover:text-green-400 font-bold rounded-xl py-3 text-sm transition-colors"
+                                    >
+                                        Edit Event
+                                    </button>
+                                </Link>
                                 <button
                                     onClick={handleCancel}
                                     disabled={actionLoading}
@@ -265,12 +307,25 @@ export default function EventDetailPage() {
                 )}
 
                 {/* Participants */}
-                {isOrganizer && participants.length > 0 && (
+                {(participants.length > 0 || (event.reservedNames && event.reservedNames.length > 0)) && (
                     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
                         <h2 className="font-bold text-white mb-4">
-                            Participants ({participants.length})
+                            Participants ({participants.length + (event.reservedNames?.length ?? 0)})
                         </h2>
                         <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-green-400/20 border border-green-400/30 flex items-center justify-center text-sm font-bold text-green-400">
+                                        {event.organizerName.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium">{event.organizerName}</p>
+                                    </div>
+                                </div>
+                                <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-500/20 text-green-400">
+                                    HOST
+                                </span>
+                            </div>
                             {participants.map(p => (
                                 <div key={p.id} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -290,6 +345,22 @@ export default function EventDetailPage() {
                                                 'bg-gray-500/20 text-gray-400'
                                     }`}>
                                         {p.status}
+                                    </span>
+                                </div>
+                            ))}
+                            {event.reservedNames && event.reservedNames.map((name, i) => (
+                                <div key={`reserved-${i}`} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-sm font-bold text-gray-400">
+                                            {name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-300">{name}</p>
+                                            <p className="text-xs text-gray-600">Reserved spot</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-purple-500/20 text-purple-400">
+                                        RESERVED
                                     </span>
                                 </div>
                             ))}

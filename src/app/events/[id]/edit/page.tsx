@@ -1,14 +1,13 @@
 'use client'
 
-import {useEffect, useState} from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import api from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { ApiResponse, Event } from '@/lib/types'
 import Navbar from '@/components/Navbar'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-
 
 const SPORTS = ['FOOTBALL', 'BADMINTON', 'BASKETBALL', 'TENNIS', 'VOLLEYBALL', 'OTHER']
 const SPORT_ICONS: Record<string, string> = {
@@ -20,10 +19,12 @@ const SPORT_ICONS: Record<string, string> = {
     OTHER: '🏃',
 }
 
-export default function CreateEventPage() {
+export default function EditEventPage() {
+    const { id } = useParams()
     const router = useRouter()
-    const { isAuthenticated,authLoading} = useAuth()
-    const [loading, setLoading] = useState(false)
+    const { user, isAuthenticated, authLoading } = useAuth()
+    const [loading, setLoading] = useState(true)
+    const [saving, setSaving] = useState(false)
     const [error, setError] = useState('')
     const [reservedNames, setReservedNames] = useState<string[]>([])
     const [reservedInput, setReservedInput] = useState('')
@@ -37,17 +38,7 @@ export default function CreateEventPage() {
         skillRequirement: string
         feeDescription: string
         cancelDeadlineHours: number
-    }>({
-        title: '',
-        sportType: '',
-        locationName: '',
-        startTime: null,
-        maxSpots: 10,
-        requireApproval: false,
-        skillRequirement: 'ALL',
-        feeDescription: '',
-        cancelDeadlineHours: 2,
-    })
+    } | null>(null)
 
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
@@ -55,32 +46,74 @@ export default function CreateEventPage() {
         }
     }, [isAuthenticated, authLoading, router])
 
+    useEffect(() => {
+        if (!isAuthenticated) return
+        fetchEvent()
+    }, [id, isAuthenticated])
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError('')
-        setLoading(true)
-
+    const fetchEvent = async () => {
         try {
-            const res = await api.post<ApiResponse<Event>>('/api/events', {
-                ...form,
-                startTime: form.startTime!.toISOString().slice(0, 19),
-                reservedSpots: reservedNames.length,
-                reservedNames,
+            const res = await api.get<ApiResponse<Event>>(`/api/events/${id}`)
+            const event = res.data.data
+
+            if (Number(user?.userId) !== Number(event.organizerId)) {
+                router.push(`/events/${id}`)
+                return
+            }
+
+            setReservedNames(event.reservedNames || [])
+            setForm({
+                title: event.title,
+                sportType: event.sportType,
+                locationName: event.locationName,
+                startTime: new Date(event.startTime),
+                maxSpots: event.maxSpots,
+                requireApproval: event.requireApproval,
+                skillRequirement: event.skillRequirement,
+                feeDescription: event.feeDescription || '',
+                cancelDeadlineHours: event.cancelDeadlineHours,
             })
-            router.push(`/events/${res.data.data.id}`)
-        } catch (err: unknown) {
-            const error = err as { response?: { data?: { message?: string } } }
-            setError(error.response?.data?.message || 'Failed to create event')
+        } catch (err) {
+            console.error(err)
+            setError('Failed to load event')
         } finally {
             setLoading(false)
         }
     }
 
-    if (authLoading) {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!form) return
+        setError('')
+        setSaving(true)
+        try {
+            await api.put(`/api/events/${id}`, {
+                ...form,
+                startTime: form.startTime!.toISOString().slice(0, 19),
+                reservedSpots: reservedNames.length,
+                reservedNames,
+            })
+            router.push(`/events/${id}`)
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } }
+            setError(error.response?.data?.message || 'Failed to update event')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    if (authLoading || loading) {
         return (
             <div className="min-h-screen bg-gray-950 flex items-center justify-center">
                 <div className="text-gray-500">Loading...</div>
+            </div>
+        )
+    }
+
+    if (!form) {
+        return (
+            <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+                <div className="text-gray-500">Event not found</div>
             </div>
         )
     }
@@ -90,7 +123,7 @@ export default function CreateEventPage() {
             <Navbar />
             <main className="max-w-xl mx-auto px-6 py-8">
                 <h1 className="text-3xl font-black mb-8">
-                    Create a <span className="text-green-400">Game</span>
+                    Edit <span className="text-green-400">Game</span>
                 </h1>
 
                 {error && (
@@ -109,7 +142,6 @@ export default function CreateEventPage() {
                             value={form.title}
                             onChange={e => setForm({ ...form, title: e.target.value })}
                             className="w-full bg-gray-900 border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors"
-                            placeholder="Sunday Football Drop-in"
                             required
                         />
                     </div>
@@ -143,7 +175,6 @@ export default function CreateEventPage() {
                             value={form.locationName}
                             onChange={e => setForm({ ...form, locationName: e.target.value })}
                             className="w-full bg-gray-900 border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors"
-                            placeholder="Topaz Park, Victoria"
                             required
                         />
                     </div>
@@ -159,7 +190,6 @@ export default function CreateEventPage() {
                             timeIntervals={15}
                             dateFormat="yyyy-MM-dd HH:mm"
                             minDate={new Date()}
-                            placeholderText="Select date and time"
                             className="w-full bg-gray-900 border border-gray-800 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 transition-colors"
                             wrapperClassName="w-full"
                             required
@@ -301,13 +331,22 @@ export default function CreateEventPage() {
                         </button>
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading || !form.sportType || !form.startTime}
-                        className="w-full bg-green-400 hover:bg-green-300 text-gray-950 font-black rounded-xl py-4 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {loading ? 'Creating...' : 'Create Game'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={() => router.push(`/events/${id}`)}
+                            className="flex-1 border border-gray-700 text-gray-400 hover:text-white font-bold rounded-xl py-4 text-sm transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={saving || !form.sportType || !form.startTime}
+                            className="flex-1 bg-green-400 hover:bg-green-300 text-gray-950 font-black rounded-xl py-4 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
                 </form>
             </main>
         </div>

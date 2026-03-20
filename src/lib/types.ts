@@ -23,6 +23,7 @@ export interface Event {
     startTime: string
     maxSpots: number
     reservedSpots: number
+    reservedNames?: string[]
     availableSpots: number
     currentParticipants: number
     requireApproval: boolean
